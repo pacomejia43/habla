@@ -1,0 +1,30 @@
+name: Compilar y publicar APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar
+        run: ./gradlew assembleRelease -PversionCode=${{ github.run_number }}
+      - name: Publicar versión
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk habla.apk
+          gh release create "v${{ github.run_number }}" habla.apk \
+            --title "Habla v${{ github.run_number }}" \
+            --notes "Versión automática. La app instalada te avisará para actualizar."
